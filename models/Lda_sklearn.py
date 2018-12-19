@@ -20,7 +20,6 @@ def main(args):
         articles = _pickle.load(infile)
     vectorised = CountVectorizer()
     bow = vectorised.fit_transform(articles).todense()
-    print(bow.shape)
     feature_names = vectorised.get_feature_names()
     lda = LatentDirichletAllocation(n_components=number_of_categories, max_iter=5, learning_method='online',
                                     learning_offset=50., random_state=0).fit(bow)
