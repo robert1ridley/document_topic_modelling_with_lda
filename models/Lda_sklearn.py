@@ -1,41 +1,30 @@
 import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import load_file
-from nltk import word_tokenize
-from nltk.corpus import stopwords
-from string import punctuation
-import numpy
+import _pickle
+from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
 
 
-class Lda_sklearn (object):
-
-    def __init__(self):
-        pass
-
-
-def remove_stop_and_punc(articles):
-    smart_punct = [u"\u2018", u"\u2019", u"\u201c", u"\u201d"]
-    stop = stopwords.words('english')
-    stop_and_punc_removed_articles = []
-    for article in articles:
-        no_stop_punc = []
-        article_tokens = word_tokenize(article)
-        for token in article_tokens:
-            if token not in punctuation and token not in smart_punct and token not in stop:
-                no_stop_punc.append(token)
-        #         IF PERFORMANCE POOR, THINK ABOUT ADDING LOWER_CASE AND 还原
-        stop_and_punc_removed_articles.append(" ".join(no_stop_punc))
-    return stop_and_punc_removed_articles
+def display_topics(model, feature_names, no_top_words):
+    for topic_idx, topic in enumerate(model.components_):
+        print ("Topic %d:" % (topic_idx))
+        print (" ".join([feature_names[i]
+                        for i in topic.argsort()[:-no_top_words - 1:-1]]))
 
 
 def main(args):
-    articles_doc = args[0]
-    articles = load_file(articles_doc)
-    stop_and_punc_removed = remove_stop_and_punc(articles)
+    articles_filepath = args[0]
+    number_of_categories = int(args[1])
+    number_of_words = int(args[2])
+    with open(articles_filepath, 'rb') as infile:
+        articles = _pickle.load(infile)
     vectorised = CountVectorizer()
-    bow = vectorised.fit_transform(stop_and_punc_removed).todense()
+    bow = vectorised.fit_transform(articles).todense()
     print(bow.shape)
+    feature_names = vectorised.get_feature_names()
+    lda = LatentDirichletAllocation(n_components=number_of_categories, max_iter=5, learning_method='online',
+                                    learning_offset=50., random_state=0).fit(bow)
+    display_topics(lda, feature_names, number_of_words)
 
 
 if __name__ == '__main__':
