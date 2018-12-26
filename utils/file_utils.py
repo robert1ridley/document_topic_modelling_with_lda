@@ -25,8 +25,7 @@ def remove_stop_and_punc(articles):
     article_tokens = word_tokenize(article)
     for token in article_tokens:
       if token not in punctuation and token not in smart_punct and token.lower() not in stop:
-        no_stop_punc.append(token)
-    #         IF PERFORMANCE POOR, THINK ABOUT ADDING LOWER_CASE AND 还原
+        no_stop_punc.append(token.lower())
     stop_and_punc_removed_articles.append(" ".join(no_stop_punc))
   return stop_and_punc_removed_articles
 
