@@ -22,19 +22,16 @@ def main(args):
     articles = tokenize_articles(articles)
     dictionary = corpora.Dictionary(articles)
     corpus = [dictionary.doc2bow(article) for article in articles]
-    lda = LdaModel(corpus, num_topics=number_of_categories, id2word=dictionary, passes=2)
+    lda = LdaModel(corpus, num_topics=number_of_categories, id2word=dictionary, passes=20)
     for topic, words in lda.print_topics(-1):
         words_split = words.split(' ')
         while '+' in words_split:
             words_split.remove('+')
-        print('Topic: {}'.format(topic))
+        print('\nTopic: {}'.format(topic+1))
         for term in words_split:
             word_val_split = term.split('*')
             word = word_val_split[1]
-            probs = lda.get_term_topics(word[1:-1])
-            for prob in probs:
-                if prob[0] == topic:
-                    probability = prob[1]
+            probability = word_val_split[0]
             print('Word: {} Probability: {}'.format(word, probability))
 
 
