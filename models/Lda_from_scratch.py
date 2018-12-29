@@ -15,8 +15,12 @@ class Lda(object):
     self.number_of_categories = in_number_of_categories
     self.number_of_passes = in_number_of_passes
     self.words_per_topic = 10
-    self.n_words = None
+    self.number_of_words = None
     self.topic_and_words = None
+    self.individual_word_count_for_single_topic = None
+    self.document_and_topic_co_occurrence_count = None
+    self.topic_word_counts = None
+    self.zs = []
 
 
   def word_counts(self, articles):
@@ -43,56 +47,74 @@ class Lda(object):
     return bisect.bisect_right(partials, choice)
 
 
-  def probs(self, v, nkm, nkr, nk):
+  def probs(self, v, i):
     n_words = self.word_lookup["word_count"]
-    res = [0] * self.number_of_categories
+    updated_probability = [0] * self.number_of_categories
     for k in range(self.number_of_categories):
-      res[k] = (nkm[k] + self.alpha) * (nkr[k][v] + self.beta) / (nk[k] + n_words * self.beta)
-    return res
+      updated_probability[k] = (self.document_and_topic_co_occurrence_count[i][k] + self.alpha) * \
+               (self.individual_word_count_for_single_topic[k][v] + self.beta) / \
+               (self.topic_word_counts[k] + n_words * self.beta)
+    return updated_probability
 
 
-  def get_topics(self, w_counts):
-    self.n_words = self.word_lookup["word_count"]
-    number_of_categories = self.number_of_categories
-    number_of_passes = self.number_of_passes
-    documents = self.documents
-    zs = []
-    nkr = [[0] * self.n_words for _ in range(number_of_categories)]
-    nkm = [[0] * number_of_categories for _ in range(len(documents))]
-    nk = [0] * number_of_categories
-
-    n_words_total = 0
-    for i in range(len(documents)):
-      zs.append([])
-      for j in range(len(documents[i])):
-        topic = random.randint(0, number_of_categories - 1)
-        zs[i].append(topic)
-        ind = documents[i][j]
-        nkm[i][topic] += 1
-        nkr[topic][ind] += 1
-        nk[topic] += 1
-        n_words_total += 1
-    for it in range(number_of_passes):
+  def iterate_and_update(self, w_counts):
+    for it in range(self.number_of_passes):
       print ("Pass", it)
-      for i in range(len(documents)):
-        for j in range(len(documents[i])):
-          ind = documents[i][j]
-          k = zs[i][j]
-          nkm[i][k] -= 1
-          nkr[k][ind] -= 1
-          nk[k] -= 1
-          ps = self.probs(ind, nkm[i], nkr, nk)
-          newk = self.random_choice(ps)
-          nkm[i][newk] += 1
-          nkr[newk][ind] += 1
-          nk[newk] += 1
-          zs[i][j] = newk
+      for i in range(len(self.documents)):
+        for j in range(len(self.documents[i])):
+          entity = self.documents[i][j]
+          k = self.zs[i][j]
+          self.document_and_topic_co_occurrence_count[i][k] -= 1
+          self.individual_word_count_for_single_topic[k][entity] -= 1
+          self.topic_word_counts[k] -= 1
+          updated_probabilities = self.probs(entity, i)
+          updated_k = self.random_choice(updated_probabilities)
+          self.document_and_topic_co_occurrence_count[i][updated_k] += 1
+          self.individual_word_count_for_single_topic[updated_k][entity] += 1
+          self.topic_word_counts[updated_k] += 1
+          self.zs[i][j] = updated_k
 
-    for k in range(number_of_categories):
-      for v in range(self.n_words):
-        nkr[k][v] /= nk[k] + 0.
-        nkr[k][v] -= (w_counts[v] + 0.) / n_words_total
-    self.topic_and_words = [[nk[k], nkr[k]] for k in range(number_of_categories)]
+    for k in range(self.number_of_categories):
+      for v in range(self.number_of_words):
+        self.individual_word_count_for_single_topic[k][v] /= self.topic_word_counts[k]
+        self.individual_word_count_for_single_topic[k][v] -= (w_counts[v]) / self.n_words_total
+    self.topic_and_words = [[self.topic_word_counts[k], self.individual_word_count_for_single_topic[k]]
+                            for k in range(self.number_of_categories)]
+
+
+  def initial_random_topic_assignment(self):
+    self.n_words_total = 0
+    for i in range(len(self.documents)):
+      self.zs.append([])
+      for j in range(len(self.documents[i])):
+        topic = random.randint(0, self.number_of_categories - 1)
+        self.zs[i].append(topic)
+        ind = self.documents[i][j]
+        self.document_and_topic_co_occurrence_count[i][topic] += 1
+        self.individual_word_count_for_single_topic[topic][ind] += 1
+        self.topic_word_counts[topic] += 1
+        self.n_words_total += 1
+
+
+  def initialize_word_and_category_counts(self):
+    self.number_of_words = self.word_lookup["word_count"]
+    self.individual_word_count_for_single_topic = []
+    for x in range(self.number_of_categories):
+      nkr_intermediate = []
+      for _ in range(self.number_of_words):
+        nkr_intermediate.append(0)
+      self.individual_word_count_for_single_topic.append(nkr_intermediate)
+
+    self.document_and_topic_co_occurrence_count = []
+    for x in range(len(self.documents)):
+      nkm_intermediate = []
+      for _ in range(self.number_of_categories):
+        nkm_intermediate.append(0)
+      self.document_and_topic_co_occurrence_count.append(nkm_intermediate)
+
+    self.topic_word_counts = []
+    for _ in range(self.number_of_categories):
+      self.topic_word_counts.append(0)
 
 
   def display_topics(self):
@@ -124,7 +146,7 @@ def tokenize_articles(articles):
 
 def main(args):
   articles_filepath = args[0]
-  iterations = 2
+  iterations = 10
   number_of_categories = int(args[1])
   with open(articles_filepath, 'rb') as infile:
     articles = _pickle.load(infile)
@@ -136,7 +158,9 @@ def main(args):
   for document in lda.documents:
     for word in document:
       count[word] += 1
-  lda.get_topics(count)
+  lda.initialize_word_and_category_counts()
+  lda.initial_random_topic_assignment()
+  lda.iterate_and_update(count)
   lda.display_topics()
 
 
