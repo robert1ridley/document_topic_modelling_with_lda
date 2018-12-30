@@ -3,7 +3,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import _pickle
 from nltk import word_tokenize
 import random
-import bisect
+from operator import itemgetter
 import numpy as np
 
 
@@ -12,7 +12,7 @@ class Lda(object):
     self.word_lookup = {'word_count': 0}
     self.documents = []
     self.alpha = 0.1
-    self.beta = 0.0002
+    self.beta = 0.01
     self.number_of_categories = in_number_of_categories
     self.number_of_passes = in_number_of_passes
     self.words_per_topic = 10
@@ -33,34 +33,28 @@ class Lda(object):
           self.word_lookup[word] = n_words
           self.word_lookup[n_words] = word
           self.word_lookup["word_count"] += 1
-        ind = self.word_lookup[word]
-        document.append(ind)
+        index = self.word_lookup[word]
+        document.append(index)
       self.documents.append(document)
 
 
-  def random_choice(self, probs):
-    partials = []
-    psum = 0.
-    for p in probs:
-      psum += p
-      partials.append(psum)
-    choice = random.random() * psum
-    return bisect.bisect_right(partials, choice)
-
-
-  def probs(self, v, i):
-    n_words = self.word_lookup["word_count"]
-    updated_probability = [0] * self.number_of_categories
+  def calculate_probability(self, v, i):
+    word_count = self.word_lookup["word_count"]
+    updated_probability = []
+    for _ in self.number_of_categories:
+      updated_probability.append(0)
     for k in range(self.number_of_categories):
-      updated_probability[k] = (self.document_and_topic_co_occurrence_count[i][k] + self.alpha) * \
-               (self.individual_word_count_for_single_topic[k][v] + self.beta) / \
-               (self.topic_word_counts[k] + n_words * self.beta)
+      k_top_total_word_count_for_doc_w_alpha = self.document_and_topic_co_occurrence_count[i][k] + self.alpha
+      k_top_word_count_w_beta = self.individual_word_count_for_single_topic[k][v] + self.beta
+      k_top_total_words_w_beta = self.topic_word_counts[k] + word_count * self.beta
+      updated_probability[k] = (k_top_total_word_count_for_doc_w_alpha) * (k_top_word_count_w_beta) / \
+               (k_top_total_words_w_beta)
     return updated_probability
 
 
   def iterate_and_update(self, w_counts):
     for single_pass in range(self.number_of_passes):
-      print ("Pass", single_pass)
+      print ("Pass: {}".format(single_pass))
       for i in range(len(self.documents)):
         for j in range(len(self.documents[i])):
           entity = self.documents[i][j]
@@ -68,13 +62,13 @@ class Lda(object):
           self.document_and_topic_co_occurrence_count[i][initial_k] -= 1
           self.individual_word_count_for_single_topic[initial_k][entity] -= 1
           self.topic_word_counts[initial_k] -= 1
-          updated_probabilities = self.probs(entity, i)
-          updated_k = self.random_choice(updated_probabilities)
+          updated_probabilities = self.calculate_probability(entity, i)
+          updated_k = np.random.multinomial(1, updated_probabilities /
+                                              np.array(updated_probabilities).sum()).argmax()
           self.document_and_topic_co_occurrence_count[i][updated_k] += 1
           self.individual_word_count_for_single_topic[updated_k][entity] += 1
           self.topic_word_counts[updated_k] += 1
           self.zs[i][j] = updated_k
-
     for k in range(self.number_of_categories):
       for v in range(self.number_of_words):
         self.individual_word_count_for_single_topic[k][v] /= self.topic_word_counts[k]
@@ -103,43 +97,36 @@ class Lda(object):
     self.number_of_words = self.word_lookup["word_count"]
     self.individual_word_count_for_single_topic = []
     for x in range(self.number_of_categories):
-      nkr_intermediate = []
+      intermediate = []
       for _ in range(self.number_of_words):
-        nkr_intermediate.append(0)
-      self.individual_word_count_for_single_topic.append(nkr_intermediate)
+        intermediate.append(0)
+      self.individual_word_count_for_single_topic.append(intermediate)
 
     self.document_and_topic_co_occurrence_count = []
     for x in range(len(self.documents)):
-      nkm_intermediate = []
+      intermediate = []
       for _ in range(self.number_of_categories):
-        nkm_intermediate.append(0)
-      self.document_and_topic_co_occurrence_count.append(nkm_intermediate)
+        intermediate.append(0)
+      self.document_and_topic_co_occurrence_count.append(intermediate)
 
     self.topic_word_counts = []
     for _ in range(self.number_of_categories):
       self.topic_word_counts.append(0)
 
 
-  def display_topics(self):
+  def get_top_words_for_topics(self):
     words_per_topic = self.words_per_topic
-    n_words = self.word_lookup["word_count"]
     topics_and_words = self.topic_and_words
     topic_num = 1
-    print(words_per_topic)
     for nk, t in topics_and_words:
       print("\nTopic: {}".format(topic_num))
-      topic = [(None, 0)] * words_per_topic
-      # print(topic)
-      for i in range(n_words):
-        for j in range(words_per_topic):
-          if t[i] > topic[j][1]:
-            topic[j + 1:] = topic[j:-1]
-            topic[j] = (self.word_lookup[i], t[i])
-            # print(topic)
-            break
+      indices, topic_word_probs_sorted = zip(*sorted(enumerate(t), key=itemgetter(1)))
+      indices = tuple(reversed(indices))
+      topic_word_probs_sorted = tuple(reversed(topic_word_probs_sorted))
+      for i in range(words_per_topic):
+        word = self.word_lookup[indices[i]]
+        print('Word: "{}" Probability: {}'.format(word, topic_word_probs_sorted[i]))
       topic_num += 1
-      for word_prob_pair in topic:
-        print ('Word: "{}" Probability: {}'.format(word_prob_pair[0], word_prob_pair[1]))
 
 
 def tokenize_articles(articles):
@@ -152,11 +139,11 @@ def tokenize_articles(articles):
 
 def main(args):
   articles_filepath = args[0]
-  iterations = 2
+  iterations = 10
   number_of_categories = int(args[1])
   with open(articles_filepath, 'rb') as infile:
     articles = _pickle.load(infile)
-  articles = tokenize_articles(articles[:2])
+  articles = tokenize_articles(articles)
   lda = Lda(number_of_categories, iterations)
   lda.word_counts(articles)
   word_count = lda.word_lookup['word_count']
@@ -167,7 +154,7 @@ def main(args):
   lda.initialize_word_and_category_counts()
   lda.initial_random_topic_assignment()
   lda.iterate_and_update(count)
-  lda.display_topics()
+  lda.get_top_words_for_topics()
 
 
 if __name__ == '__main__':
