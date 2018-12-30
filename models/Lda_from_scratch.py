@@ -41,7 +41,7 @@ class Lda(object):
   def calculate_probability(self, v, i):
     word_count = self.word_lookup["word_count"]
     updated_probability = []
-    for _ in self.number_of_categories:
+    for _ in range(self.number_of_categories):
       updated_probability.append(0)
     for k in range(self.number_of_categories):
       k_top_total_word_count_for_doc_w_alpha = self.document_and_topic_co_occurrence_count[i][k] + self.alpha
