@@ -24,7 +24,7 @@ After cloning the repository:
     - Ensure that you are inside `/document_topic_modelling_with_lda` and that your virtual environment is running
     - Enter `python utils/file_utils.py`
     - This will generate a pickle file of the news articles with stopwords and punctuation removed. 
-    The file will be at `data/no_punc_stop.txt
+    The generated file can be found at `data/no_punc_stop.txt`
     - Deactivate your virtual environment by entering `deactivate`.
     
 * Run the gensim version of LDA:
