@@ -22,7 +22,7 @@ After cloning the repository:
 
 * Create a Pickle file of news articles with stopwords and punctuation removed:
     - Ensure that you are inside `/document_topic_modelling_with_lda` and that your virtual environment is running
-    - Enter `python utils/file_utils.py`
+    - Enter `python utils/file_utils.py data/news.txt`
     - This will generate a pickle file of the news articles with stopwords and punctuation removed. 
     The generated file can be found at `data/no_punc_stop.txt`
     
