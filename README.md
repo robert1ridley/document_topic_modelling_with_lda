@@ -3,7 +3,7 @@
 This repository contains code for LDA (Latent Dirichlet Allocation) for document topic modelling. 
 There exist two different LDA implementations in the repository, a gensim implementation – which can be found at
 `models/Lda_gensim.py` – and an LDA written from scratch – which can be found at `models/Lda_from_scratch.py`.
-These datasets used are a selection of news articles (8888 in total), which can be found in the `/data` folder, 
+The datasets used are a selection of news articles (8888 in total), which can be found in the `/data` folder, 
 and are labelled `news.txt`.
 
 ## Requirements
