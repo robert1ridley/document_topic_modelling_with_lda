@@ -25,7 +25,6 @@ After cloning the repository:
     - Enter `python utils/file_utils.py`
     - This will generate a pickle file of the news articles with stopwords and punctuation removed. 
     The generated file can be found at `data/no_punc_stop.txt`
-    - Deactivate your virtual environment by entering `deactivate`.
     
 * Run the gensim version of LDA:
     - Ensure that you are inside `/document_topic_modelling_with_lda` and that your virtual environment is running. Also, ensure that you 
@@ -33,7 +32,6 @@ After cloning the repository:
     - Enter `python models/Lda_gensim.py data/no_punc_stop.txt <number of topics>`.
     For example, to return the top words for five topics, enter `python models/Lda_gensim.py data/no_punc_stop.txt 5`. 
     This will output the top 10 words for five topics in the terminal.
-    - Deactivate your virtual environment by entering `deactivate`.
     
  * Run the from-scratch version of LDA:
     - Ensure that you are inside `/document_topic_modelling_with_lda` and that your virtual environment is running. Also, ensure that you 
@@ -41,4 +39,5 @@ After cloning the repository:
     - Enter `python models/Lda_from_scratch.py data/no_punc_stop.txt <number of topics>`.
     For example, to return the top words for five topics, enter `python models/Lda_from_scratch.py data/no_punc_stop.txt 5`. 
     This will output the top 10 words for five topics in the terminal.
-    - Deactivate your virtual environment by entering `deactivate`.
+
+After running the experiments, you can deactivate your virtual environment by entering `deactivate`.
