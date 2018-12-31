@@ -20,7 +20,7 @@ After cloning the repository:
     - `source venv/bin/activate`
     - Install the project dependencies：`pip install –r requirements.txt`
 
-* Create a Pickle file with of news articles with stopwords and punctuation removed:
+* Create a Pickle file of news articles with stopwords and punctuation removed:
     - Ensure that you are inside `/document_topic_modelling_with_lda` and that your virtual environment is running
     - Enter `python utils/file_utils.py`
     - This will generate a pickle file of the news articles with stopwords and punctuation removed. 
