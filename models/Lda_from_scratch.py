@@ -29,9 +29,9 @@ class Lda(object):
       document = []
       for word in article:
         if word not in self.word_lookup:
-          n_words = self.word_lookup["word_count"]
-          self.word_lookup[word] = n_words
-          self.word_lookup[n_words] = word
+          word_count = self.word_lookup["word_count"]
+          self.word_lookup[word] = word_count
+          self.word_lookup[word_count] = word
           self.word_lookup["word_count"] += 1
         index = self.word_lookup[word]
         document.append(index)
