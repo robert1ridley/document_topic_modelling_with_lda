@@ -40,4 +40,6 @@ After cloning the repository:
     For example, to return the top words for five topics, enter `python models/Lda_from_scratch.py data/no_punc_stop.txt 5`. 
     This will output the top 10 words for five topics in the terminal.
 
-After running the experiments, you can deactivate your virtual environment by entering `deactivate`.
+## Finishing Up
+
+* After running the experiments in this repository, you can deactivate your virtual environment by entering `deactivate`.
