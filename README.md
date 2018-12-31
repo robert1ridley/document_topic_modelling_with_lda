@@ -1,4 +1,4 @@
-# document_classification_with_lda
+# Document Classification with Latent Dirichlet Allocation
 
 This repository contains code for LDA (Latent Dirichlet Allocation) for document classification. 
 There exist two different LDA implementations in the repository, a gensim implementation – which can be found at
